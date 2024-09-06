@@ -38,7 +38,9 @@ The game was planned with the following key principles:
 The game has 3 core mechanics
 
 **Tucking**: Holding left click with allow you to tuck. This allows you to crawl into smaller unreachable places and also increases your movement speed by 10%. Later on, It can be used to dodge enemy attacks or escape certain situations.
+
 **Glide**: Although you cannot fly, you have the ability to glide in the air. The glide ability activates automatically when you double jump and it also gives you invincibility for 2 seconds and a small speed boost and afterwards you slowly start to decend back to the ground.
+
 **Roll**: The roll ability only activates when your right click while in the air. This roll ability allows you to reset your glide ability and has a cooldown of 1.5 seconds. This ability allows you to get more air time and with precision timing, you can infinitely glide.
 
 
