@@ -7,13 +7,6 @@ This project was created for **The Godot Wild Jam 72** competition. Although I w
 
 ![images1](Assets/Images/t1.png)
 
-![images1](Assets/Images/t2.png)
-
-![images1](Assets/Images/t3.png)
-
-![images1](Assets/Images/t4.png)
-
-![images1](Assets/Images/t5.png)
 
 ---
 
@@ -64,7 +57,7 @@ The most significant challenge I faced was **time management**. Due to the tight
 
 ---
 
-## 🚀 Future Plans
+## Future Plans
 
 Even though I missed the jam deadline, I’m committed to **finishing this project**. Moving forward, I plan to:
 
@@ -76,5 +69,14 @@ Even though I missed the jam deadline, I’m committed to **finishing this proje
 - Polish the user experience for smoother gameplay.
 
 Although the game is in it's beta stage, it still has a lot of potential, and I’m excited to see where it goes!
+Here are some more images from the game
+
+![images1](Assets/Images/t2.png)
+
+![images1](Assets/Images/t3.png)
+
+![images1](Assets/Images/t4.png)
+
+![images1](Assets/Images/t5.png)
 
 ---
