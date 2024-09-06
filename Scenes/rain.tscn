@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbr8ppr7fbm0l"]
+
+[sub_resource type="Curve" id="Curve_nwyr8"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.0140699), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="rain" type="CPUParticles2D"]
+amount = 200
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 900)
+scale_amount_min = 2.0
+scale_amount_max = 2.0
+scale_amount_curve = SubResource("Curve_nwyr8")

@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://3n2rva1fnap8"]
+
+[ext_resource type="AudioStream" uid="uid://c1ohwrwtss0pe" path="res://Assets/Sounds/abs-pointer-1.mp3" id="1_yao4q"]
+[ext_resource type="Script" path="res://Scripts/click_sound.gd" id="2_20fwk"]
+
+[node name="clickSound" type="AudioStreamPlayer2D"]
+stream = ExtResource("1_yao4q")
+volume_db = -20.0
+script = ExtResource("2_20fwk")

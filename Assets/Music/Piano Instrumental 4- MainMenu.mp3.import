@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ccltjwtmd6pcs"
+path="res://.godot/imported/Piano Instrumental 4- MainMenu.mp3-f740aefff39ff045994ed2693a0868cd.mp3str"
+
+[deps]
+
+source_file="res://Assets/Music/Piano Instrumental 4- MainMenu.mp3"
+dest_files=["res://.godot/imported/Piano Instrumental 4- MainMenu.mp3-f740aefff39ff045994ed2693a0868cd.mp3str"]
+
+[params]
+
+loop=true
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

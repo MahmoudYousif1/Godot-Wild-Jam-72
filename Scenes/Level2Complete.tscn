@@ -1,0 +1,239 @@
+[gd_scene load_steps=22 format=3 uid="uid://bro0a2l8utwwd"]
+
+[ext_resource type="FontFile" uid="uid://csi8hv8ntqjw2" path="res://Assets/UI/Fonts/BKShatteredScore.ttf" id="2_pg381"]
+[ext_resource type="Texture2D" uid="uid://b7it5xp5vdeaa" path="res://Assets/Characters/main/flight.png" id="3_qg60q"]
+[ext_resource type="Texture2D" uid="uid://xq06xkjej08j" path="res://Assets/Characters/main/arrow.png" id="4_p0r0m"]
+
+[sub_resource type="GDScript" id="GDScript_nefqr"]
+script/source = "extends Control
+
+@onready var label = $PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/Label
+@onready var animation_player = $AnimationPlayer
+
+func _ready():
+	ClickSound.play_menu_music()
+	animation_player.play(\"fade\")
+	label.text = \"Hearts Collected: \" + str(Global.completedHearts2) + \" / \" + str(Global.max_hearts2)
+
+	
+func _process(_delta):
+	label.text = \"Hearts Collected: \" + str(Global.completedHearts2) + \" / \" + str(Global.max_hearts2)
+
+
+
+func _on_go_menu_pressed():
+	animation_player.play_backwards(\"fade\")
+	await animation_player.animation_finished
+	get_tree().change_scene_to_file(\"res://Scenes/LevelsLoadingScreen.tscn\")
+"
+
+[sub_resource type="LabelSettings" id="LabelSettings_35oua"]
+font = ExtResource("2_pg381")
+font_size = 80
+
+[sub_resource type="LabelSettings" id="LabelSettings_nste7"]
+font = ExtResource("2_pg381")
+font_size = 40
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h6scv"]
+atlas = ExtResource("3_qg60q")
+region = Rect2(0, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8aujv"]
+atlas = ExtResource("3_qg60q")
+region = Rect2(100, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fnk0g"]
+atlas = ExtResource("3_qg60q")
+region = Rect2(200, 0, 100, 100)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_r7px0"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h6scv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8aujv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fnk0g")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r2vxv"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(0, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf3eu"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(100, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lhnoh"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(200, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rfkvn"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(300, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_47rg8"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(400, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0dkky"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(500, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7qgku"]
+atlas = ExtResource("4_p0r0m")
+region = Rect2(600, 0, 100, 100)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_l4a7w"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r2vxv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf3eu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lhnoh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rfkvn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_47rg8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0dkky")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7qgku")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="Animation" id="Animation_tjisa"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PanelContainer:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_n0aye"]
+resource_name = "fade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PanelContainer:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hjre2"]
+_data = {
+"RESET": SubResource("Animation_tjisa"),
+"fade": SubResource("Animation_n0aye")
+}
+
+[node name="TutorialComplete" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_nefqr")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 70
+
+[node name="Label2" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Lvl 2 Complete! ! !"
+label_settings = SubResource("LabelSettings_35oua")
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+label_settings = SubResource("LabelSettings_nste7")
+horizontal_alignment = 1
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+position = Vector2(7, 262)
+scale = Vector2(2.12, 2.21)
+sprite_frames = SubResource("SpriteFrames_r7px0")
+autoplay = "default"
+frame_progress = 0.559377
+
+[node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+position = Vector2(854, 306)
+scale = Vector2(1.49, 1.39)
+sprite_frames = SubResource("SpriteFrames_l4a7w")
+autoplay = "default"
+
+[node name="GoMenu" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/AnimatedSprite2D2"]
+offset_left = -118.121
+offset_top = -15.1079
+offset_right = -38.1208
+offset_bottom = 15.8921
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("2_pg381")
+theme_override_font_sizes/font_size = 20
+text = "Levels
+"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_hjre2")
+}
+
+[connection signal="pressed" from="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/AnimatedSprite2D2/GoMenu" to="." method="_on_go_menu_pressed"]

@@ -1,0 +1,102 @@
+[gd_scene load_steps=14 format=3 uid="uid://cbkfqdpwi1mny"]
+
+[ext_resource type="Texture2D" uid="uid://debw2vqomxny1" path="res://Assets/Map/light-Sheet.png" id="1_0qi2o"]
+[ext_resource type="Texture2D" uid="uid://cmk2gjcn50273" path="res://Assets/Texttures/particleTexture.png" id="2_3wkba"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m7u25"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(0, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqwtl"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(200, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2svj6"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(400, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q4vlq"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(600, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o45gh"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(800, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rjjk6"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(1000, 0, 200, 200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w1xw2"]
+atlas = ExtResource("1_0qi2o")
+region = Rect2(1200, 0, 200, 200)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_thuie"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m7u25")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aqwtl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2svj6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q4vlq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o45gh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rjjk6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w1xw2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="Curve" id="Curve_ffau6"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_a0olp"]
+colors = PackedColorArray(1, 0.4, 0.298039, 1, 1, 1, 0.203922, 1)
+
+[sub_resource type="Environment" id="Environment_v4ak1"]
+background_mode = 3
+glow_enabled = true
+glow_intensity = 2.39
+glow_strength = 2.0
+glow_bloom = 0.55
+glow_blend_mode = 1
+
+[node name="lights" type="AnimatedSprite2D"]
+position = Vector2(-3, -77)
+sprite_frames = SubResource("SpriteFrames_thuie")
+autoplay = "default"
+frame_progress = 0.121478
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+modulate = Color(2, 1, 1, 1)
+position = Vector2(5, -24)
+amount = 30
+lifetime = 0.75
+randomness = 0.54
+texture = ExtResource("2_3wkba")
+emission_shape = 2
+emission_sphere_radius = 33.99
+spread = 176.25
+gravity = Vector2(0, -500)
+orbit_velocity_min = 0.1
+orbit_velocity_max = 0.1
+scale_amount_min = 0.8
+scale_amount_curve = SubResource("Curve_ffau6")
+color_ramp = SubResource("Gradient_a0olp")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_v4ak1")

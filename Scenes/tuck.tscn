@@ -1,0 +1,716 @@
+[gd_scene load_steps=60 format=3 uid="uid://bkg14rda8vobq"]
+
+[ext_resource type="Script" path="res://addons/trail_2d/trail_2d.gd" id="2_1yptt"]
+[ext_resource type="Texture2D" uid="uid://d2xcbqkb2slbd" path="res://Assets/Characters/main/tucker1.png" id="2_gbo6a"]
+[ext_resource type="Texture2D" uid="uid://bu6vnbgliwaun" path="res://Assets/Characters/main/tuck2.png" id="3_8go4u"]
+[ext_resource type="Script" path="res://Scripts/cam.gd" id="3_gy64i"]
+[ext_resource type="Texture2D" uid="uid://mmcxrcxihyv6" path="res://Assets/Characters/main/duck3.png" id="4_88hhw"]
+[ext_resource type="Texture2D" uid="uid://b7it5xp5vdeaa" path="res://Assets/Characters/main/flight.png" id="5_fx18u"]
+[ext_resource type="Texture2D" uid="uid://csxedxcjfh8na" path="res://Assets/Texttures/texture2.png" id="8_ownrt"]
+[ext_resource type="AudioStream" uid="uid://dombtypamdebg" path="res://Assets/Sounds/abs-popup-3.mp3" id="9_uampn"]
+[ext_resource type="AudioStream" uid="uid://cx0pcu7uvpjt2" path="res://Assets/Sounds/abs-confirm-2.mp3" id="10_ahjwm"]
+[ext_resource type="Texture2D" uid="uid://cmk2gjcn50273" path="res://Assets/Texttures/particleTexture.png" id="11_bc2lt"]
+[ext_resource type="PackedScene" uid="uid://bevn8m8yreihj" path="res://Scenes/heart_gui.tscn" id="12_qait2"]
+
+[sub_resource type="GDScript" id="GDScript_jk1k4"]
+script/source = "extends CharacterBody2D
+
+@export var speed: float = 500.0
+@export var acceleration: float = 1500.0
+@export var deceleration: float = 1000.0
+@export var jump_height: float = 120.0
+@export var time_to_jump_apex: float = 0.4
+@export var fall_multiplier: float = 2.7
+@export var low_jump_multiplier: float = 1.0
+@export var glide_fall_multiplier: float = 0.5
+@export var adjusted_glide_fall_multiplier: float = 0.2 # Reduced glide fall during roll
+@export var boosted_speed: float = 500.0  # Speed during boost
+@export var speed_boost_duration: float = 2.0
+
+@onready var trail_2d = $flip/Trail2D
+@onready var runparticles = $flip/runparticles
+@onready var rollparticles = $flip/rollparticles
+@onready var speed_boost_timer = $SpeedBoostTimer
+@onready var run_idle = $run_idle
+@onready var ducking = $ducking
+@onready var rollshape = $rollshape
+@onready var animations = $flip/animations
+@onready var animation_player = $AnimationPlayer
+@onready var flip = $flip
+@onready var flightsound = $flip/flightsound
+@onready var flightsound_2 = $flip/flightsound2
+@onready var walk = $flip/walk
+@onready var roll_sound = $flip/rollSound
+
+# Constants for calculations
+var gravity = ProjectSettings.get_setting(\"physics/2d/default_gravity\")
+var jump_velocity = -2 * jump_height / time_to_jump_apex
+var direction = 0.0
+var is_rolling = false
+var is_gliding = false
+var jump_count = 0
+var can_roll: bool = true
+var roll_cooldown: float = 1.5
+var roll_timer: float = 0.0
+
+func _ready():
+	# Ensure the correct initial collision box is active
+	_set_collision_shape(\"idle\")
+	# Configure the speed boost timer
+	speed_boost_timer.one_shot = true
+	speed_boost_timer.wait_time = speed_boost_duration
+	runparticles.emitting = false
+	rollparticles.emitting = false
+	trail_2d.visible = true
+
+func _physics_process(delta):
+	# Handle gravity
+	if not is_on_floor():
+		animation_player.play(\"trail1\")
+		if Input.is_action_pressed(\"jumpUp\") and not is_on_floor() and velocity.y > 0 and not is_rolling:
+			# Start gliding if the player is holding the jump button while falling
+			animations.play(\"glide\")
+			is_gliding = true
+			velocity.y += gravity * glide_fall_multiplier * delta
+			_stop_all_particles()
+		else:
+			# Apply different multipliers based on the character's jump state
+			if velocity.y > 0:
+				velocity.y += gravity * fall_multiplier * delta
+			elif velocity.y < 0 and not Input.is_action_pressed(\"jumpUp\"):
+				velocity.y += gravity * low_jump_multiplier * delta
+			else:
+				velocity.y += gravity * delta
+	else:
+		animation_player.play_backwards(\"trail1\")
+		is_gliding = false
+
+		# Reset speed to normal when touching the floor
+		speed = 300.0
+
+		# Reset jump count only if roll animation has finished
+		if not animation_player.is_playing() or animation_player.current_animation != \"roll\":
+			jump_count = 0  # Reset jump count when grounded and not rolling
+		velocity.y += gravity * delta
+
+	# Handle movement and input only if not rolling
+	if not is_rolling:
+		_handle_input(delta)
+	else:
+		# Keep rolling until the animation finishes
+		if animation_player.is_playing() and animation_player.current_animation == \"roll\":
+			rollparticles.emitting = true
+			roll_sound.play()
+			runparticles.emitting = false
+		else:
+			is_rolling = false  # Exit rolling state once the animation ends
+			glide_fall_multiplier = 0.5 # Restore original glide multiplier after roll
+			_stop_all_particles()
+
+	# Handle roll cooldown timer
+	if not can_roll:
+		roll_timer += delta
+		if roll_timer >= roll_cooldown:
+			can_roll = true
+			roll_timer = 0.0
+
+	move_and_slide()
+
+func _handle_input(delta):
+	# Handle jump and double jump
+	if Input.is_action_just_pressed(\"jumpUp\") and (is_on_floor() or jump_count < 2):
+		velocity.y = jump_velocity
+		jump_count += 1  # Increment jump count
+		
+		if jump_count == 1:
+			flightsound_2.play()
+			animations.play(\"glide\")
+		# Play glide animation if it's the second jump and apply speed boost
+		if jump_count == 2:
+			animations.play(\"glide\")
+			flightsound.play()
+			is_gliding = true
+			_apply_speed_boost()
+		else:
+			is_gliding = false  # Reset gliding when jumping
+			_stop_all_particles()
+
+	# Handle movement
+	direction = Input.get_axis(\"go_left\", \"go_right\")
+
+	if direction != 0:
+		velocity.x = move_toward(velocity.x, direction * speed, acceleration * delta)
+		
+		# Only play the running animation if on the ground and not gliding
+		if is_on_floor() and not is_gliding:
+			if Input.is_action_pressed(\"duck\"):
+				_set_collision_shape(\"ducking\")
+				animations.play(\"duckrun\")
+				_stop_all_particles()
+			else:
+				_set_collision_shape(\"idle\")
+				animations.play(\"run\")
+				rollparticles.emitting = false
+				runparticles.emitting = true
+		
+		# Handle flip for direction
+		if direction > 0:
+			flip.scale.x = 1
+		elif direction < 0:
+			flip.scale.x = -1
+	else:
+		velocity.x = move_toward(velocity.x, 0, deceleration * delta)
+		_stop_all_particles()
+		
+		if is_on_floor() and not is_gliding:
+			if Input.is_action_pressed(\"duck\"):
+				_set_collision_shape(\"ducking\")
+				animations.play(\"duckidle\")
+			else:
+				_set_collision_shape(\"idle\")
+				animations.play(\"idle\")
+				_stop_all_particles()
+				
+	# Roll can now happen whether on the ground or in the air, including while gliding
+	if Input.is_action_just_pressed(\"roll\") and can_roll:
+		is_rolling = true
+		_set_collision_shape(\"roller\")
+		animations.play(\"roll\")
+		rollparticles.emitting = true
+		runparticles.emitting = false
+		is_gliding = false
+		
+		# Reset jumps if rolling in the air and start cooldown
+		if not is_on_floor():
+			jump_count = 0
+			can_roll = false  # Disable rolling until cooldown is over
+			glide_fall_multiplier = adjusted_glide_fall_multiplier # Decrease glide multiplier during roll
+			
+func _apply_speed_boost():
+	# Temporarily boost speed for the second jump
+	speed = boosted_speed
+	speed_boost_timer.start()
+
+func _set_collision_shape(state: String) -> void:
+	# Disable all collision shapes
+	run_idle.disabled = true
+	ducking.disabled = true
+	rollshape.disabled = true
+
+	# Enable the correct collision shape based on the state
+	match state:
+		\"idle\", \"run\":
+			run_idle.disabled = false
+		\"ducking\":
+			ducking.disabled = false
+		\"roller\":
+			rollshape.disabled = false
+
+func _on_speed_boost_timer_timeout():
+	speed = 300.0
+
+func _stop_all_particles():
+	# Helper function to stop all particles
+	runparticles.emitting = false
+	rollparticles.emitting = false
+"
+
+[sub_resource type="Curve" id="Curve_sp7fx"]
+_data = [Vector2(0.0109489, 0.98782), 0.0, 0.0, 0, 0, Vector2(0.985401, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_6uulm"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tkdqv"]
+atlas = ExtResource("3_8go4u")
+region = Rect2(0, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8guhf"]
+atlas = ExtResource("3_8go4u")
+region = Rect2(100, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_613xd"]
+atlas = ExtResource("3_8go4u")
+region = Rect2(200, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cmpw1"]
+atlas = ExtResource("3_8go4u")
+region = Rect2(300, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3mf88"]
+atlas = ExtResource("3_8go4u")
+region = Rect2(400, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5jd0x"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(0, 400, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_st0ra"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(100, 400, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_20bqn"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(200, 400, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xlfu6"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(300, 400, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3u1j2"]
+atlas = ExtResource("5_fx18u")
+region = Rect2(0, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bosru"]
+atlas = ExtResource("5_fx18u")
+region = Rect2(100, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idw0a"]
+atlas = ExtResource("5_fx18u")
+region = Rect2(200, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_apfcq"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(0, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1sklj"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(100, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_23nhm"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(200, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_akkaw"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(300, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jc4b1"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(400, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qw6h6"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(500, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsq2o"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(0, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_82o4s"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(100, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j6qfg"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(200, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_65fdw"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(300, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_glns3"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(400, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m0gpg"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(500, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7r1oh"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(600, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yu8gs"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(700, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dsads"]
+atlas = ExtResource("4_88hhw")
+region = Rect2(800, 300, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_36ss1"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(0, 100, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_brh5a"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(100, 100, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_na568"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(200, 100, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_72l1m"]
+atlas = ExtResource("2_gbo6a")
+region = Rect2(300, 100, 100, 100)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ltr3p"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tkdqv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8guhf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_613xd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cmpw1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3mf88")
+}],
+"loop": true,
+"name": &"duckidle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5jd0x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_st0ra")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_20bqn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xlfu6")
+}],
+"loop": true,
+"name": &"duckrun",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3u1j2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bosru")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idw0a")
+}],
+"loop": true,
+"name": &"glide",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_apfcq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1sklj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_23nhm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_akkaw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jc4b1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qw6h6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hsq2o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_82o4s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j6qfg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_65fdw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_glns3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m0gpg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7r1oh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yu8gs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dsads")
+}],
+"loop": true,
+"name": &"roll",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_36ss1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_brh5a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_na568")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_72l1m")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]
+
+[sub_resource type="Curve" id="Curve_v8yxe"]
+min_value = -200.0
+max_value = 200.0
+_data = [Vector2(0, -200), 0.0, 0.0, 0, 0, Vector2(1, 200), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_7r55r"]
+_data = [Vector2(0.00399999, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_nke70"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="Curve" id="Curve_midf4"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_funid"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="Animation" id="Animation_vqbtv"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("flip/animations:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(2.526, 2.1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("flip/Trail2D:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_fln51"]
+resource_name = "bounce"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("flip/animations:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.6, 1),
+"transitions": PackedFloat32Array(-2, -2, -2, -2, -2),
+"update": 0,
+"values": [Vector2(2.526, 2.1), Vector2(2.739, 2.1), Vector2(2.275, 2.1), Vector2(2.275, 2.1), Vector2(2.5, 2.1)]
+}
+
+[sub_resource type="Animation" id="Animation_h3cua"]
+resource_name = "idleBounce"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("flip/animations:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.6, 0.8, 1),
+"transitions": PackedFloat32Array(-2, -2, -2, -2, -2, -2),
+"update": 0,
+"values": [Vector2(2.5, 2.1), Vector2(2.6, 2.1), Vector2(2.7, 2.025), Vector2(2.7, 2.1), Vector2(2.6, 2.1), Vector2(2.5, 2.1)]
+}
+
+[sub_resource type="Animation" id="Animation_bgn7d"]
+resource_name = "trail1"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("flip/Trail2D:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_y120s"]
+_data = {
+"RESET": SubResource("Animation_vqbtv"),
+"bounce": SubResource("Animation_fln51"),
+"idleBounce": SubResource("Animation_h3cua"),
+"trail1": SubResource("Animation_bgn7d")
+}
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_m7geu"]
+radius = 35.0571
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ncexb"]
+radius = 29.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_cbt2d"]
+radius = 39.0128
+
+[node name="Tuck" type="CharacterBody2D" groups=["player"]]
+script = SubResource("GDScript_jk1k4")
+
+[node name="flip" type="Node2D" parent="."]
+
+[node name="Trail2D" type="Line2D" parent="flip"]
+modulate = Color(1, 1, 1, 0)
+show_behind_parent = true
+position = Vector2(-3, -32)
+width = 40.0
+width_curve = SubResource("Curve_sp7fx")
+gradient = SubResource("Gradient_6uulm")
+joint_mode = 2
+round_precision = 20
+antialiased = true
+script = ExtResource("2_1yptt")
+length = 40
+
+[node name="PointLight2D" type="PointLight2D" parent="flip"]
+position = Vector2(-28.5001, -126)
+scale = Vector2(0.994888, 0.705054)
+energy = 3.65
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.529412)
+texture = ExtResource("11_bc2lt")
+texture_scale = 28.87
+
+[node name="animations" type="AnimatedSprite2D" parent="flip"]
+z_index = 1
+position = Vector2(-2, -79)
+scale = Vector2(2.526, 2.1)
+sprite_frames = SubResource("SpriteFrames_ltr3p")
+animation = &"roll"
+autoplay = "idle"
+frame_progress = 0.513047
+
+[node name="runparticles" type="CPUParticles2D" parent="flip"]
+position = Vector2(-37, -6)
+rotation = 3.21944
+amount = 20
+randomness = 0.44
+texture = ExtResource("8_ownrt")
+emission_shape = 3
+emission_rect_extents = Vector2(-30, -10)
+spread = 88.75
+gravity = Vector2(0, 0)
+initial_velocity_min = 1.0
+initial_velocity_max = 1.0
+radial_accel_min = 1.0
+radial_accel_max = 1.0
+tangential_accel_curve = SubResource("Curve_v8yxe")
+scale_amount_min = 0.07
+scale_amount_max = 0.09
+scale_amount_curve = SubResource("Curve_7r55r")
+color_ramp = SubResource("Gradient_nke70")
+
+[node name="flightsound" type="AudioStreamPlayer2D" parent="flip"]
+stream = ExtResource("9_uampn")
+volume_db = -20.0
+
+[node name="flightsound2" type="AudioStreamPlayer2D" parent="flip"]
+stream = ExtResource("10_ahjwm")
+volume_db = -20.0
+
+[node name="walk" type="AudioStreamPlayer2D" parent="flip"]
+
+[node name="rollSound" type="AudioStreamPlayer2D" parent="flip"]
+stream = ExtResource("9_uampn")
+volume_db = -20.0
+
+[node name="rollparticles" type="CPUParticles2D" parent="flip"]
+position = Vector2(-2, -9)
+emitting = false
+amount = 20
+texture = ExtResource("11_bc2lt")
+emission_shape = 2
+emission_sphere_radius = 22.92
+spread = 13.18
+gravity = Vector2(0, -100)
+orbit_velocity_min = -0.05
+orbit_velocity_max = 0.05
+scale_amount_min = 0.2
+scale_amount_max = 0.2
+scale_amount_curve = SubResource("Curve_midf4")
+color_ramp = SubResource("Gradient_funid")
+
+[node name="cam" type="Camera2D" parent="."]
+offset = Vector2(0, -20)
+zoom = Vector2(0.7, 0.7)
+position_smoothing_enabled = true
+rotation_smoothing_enabled = true
+script = ExtResource("3_gy64i")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_y120s")
+}
+
+[node name="runCollision" type="CollisionPolygon2D" parent="."]
+visible = false
+position = Vector2(7, -78)
+polygon = PackedVector2Array(-1, -1, 16, 0, 24, 8, 42, 8, 47, 14, 50, 18, 50, 23, 44, 27, 40, 28, 24, 29, 22, 32, 22, 46, 28, 50, 31, 54, 29, 59, 26, 61, 25, 64, 27, 67, 25, 70, 21, 71, 20, 74, 6, 73, 1, 69, -14, 68, -20, 67, -24, 69, -26, 71, -30, 73, -40, 73, -49, 70, -50, 53, -52, 43, -22, 19, -20, 14, -3, -1)
+disabled = true
+
+[node name="duckingCollision" type="CollisionPolygon2D" parent="."]
+visible = false
+position = Vector2(7, -78)
+polygon = PackedVector2Array(-1, -1, 16, 0, 24, 8, 42, 8, 47, 14, 50, 18, 50, 23, 44, 27, 40, 28, 24, 29, 22, 32, 22, 46, 28, 50, 31, 54, 29, 59, 26, 61, 25, 64, 27, 67, 25, 70, 21, 71, 20, 74, 6, 73, 1, 69, -14, 68, -20, 67, -24, 69, -26, 71, -30, 73, -40, 73, -49, 70, -50, 53, -52, 43, -22, 19, -20, 14, -3, -1)
+disabled = true
+
+[node name="run_idle" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(3, -41)
+shape = SubResource("CircleShape2D_m7geu")
+
+[node name="ducking" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(5, -38)
+shape = SubResource("CircleShape2D_ncexb")
+disabled = true
+
+[node name="rollshape" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(5, -43)
+shape = SubResource("CircleShape2D_cbt2d")
+disabled = true
+
+[node name="SpeedBoostTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="HeartGUI" parent="." instance=ExtResource("12_qait2")]
+
+[connection signal="timeout" from="SpeedBoostTimer" to="." method="_on_speed_boost_timer_timeout"]

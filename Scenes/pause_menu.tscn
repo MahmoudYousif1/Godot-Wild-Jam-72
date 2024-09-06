@@ -1,0 +1,207 @@
+[gd_scene load_steps=21 format=3 uid="uid://58m7bjkmkwwi"]
+
+[ext_resource type="FontFile" uid="uid://ddq7jbid1l1om" path="res://Assets/UI/Fonts/vinivicious.ttf" id="1_8ddqs"]
+[ext_resource type="Shader" path="res://Shaders/pause_menu.gdshader" id="1_wcj44"]
+[ext_resource type="Script" path="res://Scripts/pause_menu.gd" id="2_vlkn0"]
+[ext_resource type="Shader" path="res://Scripts/pause_color_rect.gdshader" id="3_yucjt"]
+[ext_resource type="PackedScene" uid="uid://cbkfqdpwi1mny" path="res://Scenes/lights.tscn" id="4_nroo7"]
+[ext_resource type="Texture2D" uid="uid://mmcxrcxihyv6" path="res://Assets/Characters/main/duck3.png" id="5_i7ie6"]
+[ext_resource type="Texture2D" uid="uid://csmjwnfme4iei" path="res://Assets/Texttures/64x64 textures (46).png" id="7_eq4ij"]
+[ext_resource type="Texture2D" uid="uid://cmk2gjcn50273" path="res://Assets/Texttures/particleTexture.png" id="7_y2php"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outfv"]
+shader = ExtResource("1_wcj44")
+shader_parameter/v = 1.0
+shader_parameter/size = 10.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_utow3"]
+shader = ExtResource("3_yucjt")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hnvar"]
+atlas = ExtResource("5_i7ie6")
+region = Rect2(0, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fumd7"]
+atlas = ExtResource("5_i7ie6")
+region = Rect2(100, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hxhwo"]
+atlas = ExtResource("5_i7ie6")
+region = Rect2(200, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e3bk8"]
+atlas = ExtResource("5_i7ie6")
+region = Rect2(300, 200, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dk6b8"]
+atlas = ExtResource("5_i7ie6")
+region = Rect2(400, 200, 100, 100)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_67axe"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hnvar")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fumd7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hxhwo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e3bk8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dk6b8")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="Curve" id="Curve_jdlh5"]
+_data = [Vector2(0.0228758, 1), 0.0, 0.0, 0, 0, Vector2(0.986928, 0.0139431), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Animation" id="Animation_krnvh"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_vjnhy"]
+resource_name = "fade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, -2),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_m7etu"]
+_data = {
+"RESET": SubResource("Animation_krnvh"),
+"fade": SubResource("Animation_vjnhy")
+}
+
+[node name="pauseMenu" type="Control"]
+process_mode = 3
+modulate = Color(1, 1, 1, 0)
+material = SubResource("ShaderMaterial_outfv")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_vlkn0")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+modulate = Color(0, 0, 0, 1)
+material = SubResource("ShaderMaterial_utow3")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.607843)
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="Resume" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_8ddqs")
+theme_override_font_sizes/font_size = 50
+text = "Resume"
+
+[node name="Restart" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_8ddqs")
+theme_override_font_sizes/font_size = 50
+text = "Restart"
+
+[node name="Options" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_8ddqs")
+theme_override_font_sizes/font_size = 50
+text = "Options"
+
+[node name="Menu" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_8ddqs")
+theme_override_font_sizes/font_size = 50
+text = "Menu"
+
+[node name="tucker" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+position = Vector2(-261, 287)
+scale = Vector2(3.75, 4.1075)
+sprite_frames = SubResource("SpriteFrames_67axe")
+autoplay = "default"
+
+[node name="lights" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer" instance=ExtResource("4_nroo7")]
+position = Vector2(498, 257)
+scale = Vector2(1.415, 2.26)
+
+[node name="PointLight2D" type="PointLight2D" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/lights"]
+position = Vector2(5.6537, -15.0442)
+scale = Vector2(2.65018, 1.81748)
+texture = ExtResource("7_eq4ij")
+
+[node name="particles" type="CPUParticles2D" parent="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+position = Vector2(108, -148)
+amount = 20
+randomness = 0.09
+texture = ExtResource("7_y2php")
+emission_shape = 3
+emission_rect_extents = Vector2(600, -20)
+spread = 73.26
+gravity = Vector2(0, 2000)
+scale_amount_min = 0.1
+scale_amount_max = 0.2
+scale_amount_curve = SubResource("Curve_jdlh5")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_m7etu")
+}
+
+[connection signal="pressed" from="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/Resume" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/Restart" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/Options" to="." method="_on_options_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/Menu" to="." method="_on_menu_pressed"]
